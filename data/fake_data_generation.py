@@ -4,9 +4,9 @@ from faker import Faker
 import random
 import os
 
-fake = Faker()
 
-n = 3800
+fake = Faker()
+n = 3800  
 
 save_path = "data"
 os.makedirs(save_path, exist_ok=True)
@@ -37,52 +37,50 @@ data = []
 for i in range(n):
     claim_number = f"CLM{100000+i}"
 
-    circ = np.random.choice(circumstances, p=[0.18,0.13,0.12,0.12,0.07,0.06,0.09,0.06,0.09,0.08])
-    org = np.random.choice(org_notified_by, p=[0.25,0.20,0.25,0.10,0.10,0.10])
-    method = np.random.choice(method_notification, p=[0.55,0.30,0.15])
-    ncd = np.random.choice(ncd_indicator, p=[0.45,0.55])
+    circ = np.random.choice(circumstances, p=[0.14,0.11,0.10,0.10,0.10,0.08,0.10,0.08,0.10,0.09])
+    org = np.random.choice(org_notified_by, p=[0.20,0.20,0.20,0.15,0.15,0.10])
+    method = np.random.choice(method_notification, p=[0.50,0.35,0.15])
+    ncd = np.random.choice(ncd_indicator, p=[0.50,0.50])
 
-    if random.random() < 0.8:
-        notif_delay = np.random.randint(0, 50)  
-    elif random.random() < 0.15:
-        notif_delay = np.random.normal(100, 10)  
-    else:
-        notif_delay = np.random.randint(150, 350) 
-    notif_delay = max(0, int(notif_delay))
+    notif_delay = np.random.normal(loc=40, scale=30)  
+    notif_delay = max(0, min(int(notif_delay), 300))  
 
-    excess = np.random.exponential(scale=700)
-    if random.random() < 0.02:
-        excess *= 10  
+    excess = np.random.lognormal(mean=np.log(600), sigma=0.8)
+    if random.random() < 0.01:  
+        excess *= 5
     excess = round(min(excess, 20000), 2)
 
     injury = np.random.choice([0, 1], p=[0.55, 0.45])
-    tp_damage = np.random.choice([0, 1], p=[0.35, 0.65])
-    insured_damage = np.random.choice([0, 1], p=[0.08, 0.92])
+    tp_damage = np.random.choice([0, 1], p=[0.40, 0.60])
+    insured_damage = np.random.choice([0, 1], p=[0.10, 0.90])
 
     age = int(np.random.normal(35, 12))
-    if age < 18: age = 18
-    if age > 75: age = 75
+    age = max(18, min(age, 75))
 
-    vehicle_value = np.random.lognormal(mean=np.log(14000), sigma=0.6)
-    if random.random() < 0.02:
-        vehicle_value *= 5 
-    if vehicle_value > 150000:
-        vehicle_value = 150000
+    vehicle_value = np.random.lognormal(mean=np.log(15000), sigma=0.7)
+    if random.random() < 0.01:
+        vehicle_value *= 4
+    vehicle_value = min(vehicle_value, 150000)
     vehicle_value = int(vehicle_value)
 
-    if tp_damage == 1:
-        liability = weighted_choice(liability_group, [0.55, 0.23, 0.22])
+    if tp_damage == 1 and injury == 1:
+        liability = weighted_choice(liability_group, [0.50, 0.25, 0.25])
+    elif tp_damage == 1:
+        liability = weighted_choice(liability_group, [0.45, 0.28, 0.27])
     elif injury == 1:
-        liability = weighted_choice(liability_group, [0.45, 0.25, 0.30])
+        liability = weighted_choice(liability_group, [0.40, 0.30, 0.30])
     else:
-        liability = weighted_choice(liability_group, [0.40, 0.20, 0.40])
+        liability = weighted_choice(liability_group, [0.35, 0.33, 0.32])
 
-    if age < 25 and random.random() < 0.4:
+    if age < 25 and random.random() < 0.3:
         liability = "Fully_Liable"
 
-    if random.random() < 0.03:
+    if random.random() < 0.08:
+        liability = np.random.choice(liability_group)
+
+    if random.random() < 0.04:
         notif_delay = None
-    if random.random() < 0.02:
+    if random.random() < 0.03:
         vehicle_value = None
 
     data.append([
@@ -111,4 +109,3 @@ df = pd.DataFrame(data, columns=[
 df = df.sample(frac=1).reset_index(drop=True)
 
 df.to_csv(file_path, index=False)
-print(f"Synthetic motor insurance data generated and saved to {file_path}")
